@@ -8,10 +8,19 @@ Adafruit_DCMotor *motor2 = AFMS.getMotor(2); //right back
 Adafruit_DCMotor *motor3 = AFMS.getMotor(3); //right front
 Adafruit_DCMotor *motor4 = AFMS.getMotor(4); //left front
 
+const int trigPin = 3;
+const int echoPin = 2;
+
+long duration;
+int distance;
+
 void setup() {
   Serial.begin(9600);
 
   AFMS.begin();
+
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
 }
 
 void loop() {
@@ -22,7 +31,16 @@ void loop() {
     String rightSpeedString = command.substring(4, 8);
     int left = leftSpeedString.toInt();
     int right = rightSpeedString.toInt();
-    move(left, right);
+    if (left > 0 && right > 0) {
+      distance = calculateDistance();
+      if (distance > 10) {
+        move(left, right);
+      } else {
+        move(0, 0);
+      }
+    } else {
+      move(left, right);
+    }
   }
 }
 
@@ -34,20 +52,18 @@ void move(int leftSpeed, int rightSpeed) {
 
   if (leftSpeed <= 0) {
     left = true;
-    //   Serial.println("left = true");
   } else {
     left = false;
   }
   if (rightSpeed <= 0) {
     right = true;
-    //  Serial.println("right = true");
   } else {
     right = false;
   }
 
   leftSpeed = abs(leftSpeed);
   rightSpeed = abs(rightSpeed);
-  
+
   motor1->setSpeed (leftSpeed);
   motor2->setSpeed (rightSpeed);
   motor3->setSpeed (rightSpeed);
@@ -68,5 +84,17 @@ void move(int leftSpeed, int rightSpeed) {
     motor2->run(FORWARD);
     motor3->run(FORWARD);
   }
+}
+
+int calculateDistance() {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  duration = pulseIn(echoPin, HIGH);
+  distance = duration * 0.034 / 2;
+
+  return distance;
 }
 
